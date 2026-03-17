@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Tower Defense</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hud-panel">
+      <div>
+        <p class="eyebrow">Mini Tower Defense</p>
+        <h1>Hold the lane and stop every wave.</h1>
+      </div>
+      <div class="controls">
+        <button id="start-btn" type="button">Start / Restart</button>
+        <p>Place towers on grass tiles for 25 gold. Path and rock tiles are blocked.</p>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="message" id="message"></div>
+      <p class="asset-note">Enemy sprites load from <code>assets/enemies/scout.png</code> and <code>assets/enemies/brute.png</code>. Tower art loads from <code>assets/towers/basic.png</code>.</p>
+    </section>
+    <section class="game-shell">
+      <canvas id="game" width="768" height="576" aria-label="tower defense game canvas"></canvas>
+    </section>
+  </main>
+  <script src="./main.js"></script>
+</body>
+</html>
