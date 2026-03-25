@@ -41,7 +41,9 @@ body {
 }
 
 .hud-panel {
-  padding: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
 }
 
 .eyebrow {
@@ -55,11 +57,12 @@ body {
 h1 {
   margin: 0;
   line-height: 1.1;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
 }
 
 .controls {
-  margin-top: 20px;
+  display: grid;
+  gap: 8px;
 }
 
 button {
@@ -78,30 +81,140 @@ button:hover {
   filter: brightness(1.05);
 }
 
+.build-panel,
 .stats,
+.tower-info,
 .message {
-  margin-top: 18px;
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   background: rgba(52, 115, 106, 0.08);
 }
 
-.message {
-  min-height: 74px;
-  background: rgba(201, 111, 59, 0.1);
+.hud-header,
+.controls p,
+.build-panel p,
+.tower-info p,
+.message p {
+  margin: 0;
 }
 
-.asset-note {
-  margin: 16px 2px 0;
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  background: rgba(52, 115, 106, 0.10);
+}
+
+.stat-chip {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 250, 240, 0.82);
+}
+
+.stat-chip strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.78rem;
+  color: rgba(29, 42, 50, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.build-panel {
+  background: rgba(201, 111, 59, 0.08);
+}
+
+.build-panel h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.build-panel p {
+  line-height: 1.35;
+  font-size: 0.93rem;
+}
+
+.build-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.build-option {
+  width: 100%;
+  text-align: left;
+  box-shadow: none;
+  padding: 10px 12px;
+}
+
+.build-option strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.build-option small {
+  display: block;
+  opacity: 0.88;
+}
+
+.build-option.is-selected {
+  outline: 3px solid rgba(29, 42, 50, 0.18);
+  outline-offset: 2px;
+}
+
+.tower-info {
+  background: rgba(29, 42, 50, 0.06);
+}
+
+.tower-info.is-hidden {
+  display: none;
+}
+
+.tower-info h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.tower-info p {
+  line-height: 1.35;
   font-size: 0.95rem;
-  line-height: 1.45;
-  color: rgba(29, 42, 50, 0.82);
 }
 
-code {
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(29, 42, 50, 0.08);
+.tower-info p + p {
+  margin-top: 4px;
+}
+
+.tower-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.tower-action {
+  box-shadow: none;
+  padding: 9px 12px;
+}
+
+.tower-action.secondary {
+  background: #34736a;
+}
+
+.tower-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: none;
+}
+
+.message {
+  min-height: 0;
+  padding: 8px 12px;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(201, 111, 59, 0.12);
 }
 
 .game-shell {
@@ -120,5 +233,18 @@ canvas {
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 981px) {
+  .hud-panel {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
   }
 }
