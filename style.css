@@ -82,7 +82,9 @@ button:hover {
 }
 
 .build-panel,
-.stats,
+.life-panel,
+.economy-panel,
+.wave-panel,
 .tower-info,
 .message {
   padding: 12px 14px;
@@ -98,26 +100,69 @@ button:hover {
   margin: 0;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  background: rgba(52, 115, 106, 0.10);
+.life-panel {
+  background: rgba(201, 111, 59, 0.14);
 }
 
-.stat-chip {
-  padding: 9px 10px;
+.economy-panel {
+  background: rgba(45, 95, 87, 0.08);
+}
+
+.wave-panel {
+  background: rgba(29, 42, 50, 0.9);
+  color: #fff9ef;
+}
+
+.life-chip,
+.economy-chip,
+.wave-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 250, 240, 0.82);
 }
 
-.stat-chip strong {
-  display: block;
-  margin-bottom: 3px;
+.life-chip {
+  background: rgba(255, 250, 240, 0.92);
+}
+
+.economy-chip {
+  background: rgba(255, 250, 240, 0.88);
+}
+
+.wave-chip {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.life-chip strong,
+.economy-chip strong,
+.wave-chip strong {
   font-size: 0.78rem;
-  color: rgba(29, 42, 50, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.life-chip strong,
+.economy-chip strong {
+  color: rgba(29, 42, 50, 0.72);
+}
+
+.wave-chip strong {
+  color: rgba(255, 249, 239, 0.86);
+}
+
+.life-chip span,
+.economy-chip span {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.wave-chip span {
+  font-size: 0.95rem;
+  text-align: right;
+  color: rgba(255, 249, 239, 0.9);
 }
 
 .build-panel {
@@ -126,6 +171,11 @@ button:hover {
 
 .build-panel h2 {
   margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.economy-panel h2 {
+  margin: 0 0 8px;
   font-size: 1rem;
 }
 
@@ -251,6 +301,8 @@ button:hover {
 
 .game-shell {
   padding: 16px;
+  display: grid;
+  gap: 12px;
 }
 
 canvas {
@@ -267,12 +319,19 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .stats {
+  .tower-actions {
     grid-template-columns: 1fr;
   }
 
-  .tower-actions {
-    grid-template-columns: 1fr;
+  .wave-chip,
+  .life-chip,
+  .economy-chip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wave-chip span {
+    text-align: left;
   }
 }
 

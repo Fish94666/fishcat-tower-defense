@@ -3,7 +3,9 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   const buildPanelEl = document.getElementById("build-panel");
-  const statsEl = document.getElementById("stats");
+  const lifePanelEl = document.getElementById("life-panel");
+  const economyPanelEl = document.getElementById("economy-panel");
+  const wavePanelEl = document.getElementById("wave-panel");
   const towerInfoEl = document.getElementById("tower-info");
   const messageEl = document.getElementById("message");
   const startBtn = document.getElementById("start-btn");
@@ -276,7 +278,9 @@
   let lastTimestamp = 0;
   let rafId = 0;
   let lastBuildPanelMarkup = "";
-  let lastStatsMarkup = "";
+  let lastLifeMarkup = "";
+  let lastEconomyMarkup = "";
+  let lastWaveMarkup = "";
   let lastTowerInfoMarkup = "";
   let lastMessageText = "";
 
@@ -603,11 +607,15 @@
 
   function updateTowers(dt) {
     // Towers prefer the enemy farthest along the path among targets in range.
+    const reservedDamageByEnemyId = {};
+
     for (const tower of state.towers) {
       tower.cooldownLeft = Math.max(0, tower.cooldownLeft - dt);
       tower.targetEnemyId = null;
       let target = null;
       let bestProgress = -1;
+      let fallbackTarget = null;
+      let fallbackProgress = -1;
 
       for (const enemy of state.enemies) {
         if (enemy.hp <= 0) {
@@ -616,11 +624,23 @@
         const distance = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
         if (distance <= tower.range) {
           const progressScore = enemy.pathIndex * 1000 - distance;
-          if (progressScore > bestProgress) {
+          const reservedDamage = reservedDamageByEnemyId[enemy.id] || 0;
+          const effectiveHp = enemy.hp - reservedDamage;
+
+          if (progressScore > fallbackProgress) {
+            fallbackProgress = progressScore;
+            fallbackTarget = enemy;
+          }
+
+          if (effectiveHp > 0 && progressScore > bestProgress) {
             bestProgress = progressScore;
             target = enemy;
           }
         }
+      }
+
+      if (!target) {
+        target = fallbackTarget;
       }
 
       if (!target) {
@@ -634,6 +654,7 @@
       }
 
       target.hp -= tower.damage;
+      reservedDamageByEnemyId[target.id] = (reservedDamageByEnemyId[target.id] || 0) + tower.damage;
       target.hitFlash = Math.min(1, target.hitFlash + (tower.type === "sniper" ? 0.85 : 0.55));
       tower.cooldownLeft = tower.cooldown;
       state.effects.push({
@@ -1196,6 +1217,7 @@
 
   function syncHud() {
     const currentWave = Math.min(state.waveIndex + (state.mode === "won" ? 0 : 1), waves.length);
+    const waveConfig = waves[Math.min(state.waveIndex, waves.length - 1)] || null;
     const selectedTower = getSelectedTower();
     const buildPanelMarkup = [
       "<h2>Build Towers</h2>",
@@ -1214,14 +1236,38 @@
       lastBuildPanelMarkup = buildPanelMarkup;
     }
 
-    const statsMarkup = [
-      "<div class=\"stat-chip\"><strong>Gold</strong>" + state.gold + "</div>",
-      "<div class=\"stat-chip\"><strong>Lives</strong>" + state.lives + "</div>",
-      "<div class=\"stat-chip\"><strong>Wave</strong>" + currentWave + " / " + waves.length + "</div>",
+    const lifeMarkup = [
+      "<div class=\"life-chip\">",
+      "<strong>Lives</strong>",
+      "<span>" + state.lives + "</span>",
+      "</div>",
     ].join("");
-    if (statsMarkup !== lastStatsMarkup) {
-      statsEl.innerHTML = statsMarkup;
-      lastStatsMarkup = statsMarkup;
+    if (lifeMarkup !== lastLifeMarkup) {
+      lifePanelEl.innerHTML = lifeMarkup;
+      lastLifeMarkup = lifeMarkup;
+    }
+
+    const economyMarkup = [
+      "<h2>Tower Economy</h2>",
+      "<div class=\"economy-chip\">",
+      "<strong>Gold</strong>",
+      "<span>" + state.gold + "g</span>",
+      "</div>",
+    ].join("");
+    if (economyMarkup !== lastEconomyMarkup) {
+      economyPanelEl.innerHTML = economyMarkup;
+      lastEconomyMarkup = economyMarkup;
+    }
+
+    const waveMarkup = [
+      "<div class=\"wave-chip\">",
+      "<strong>Wave " + currentWave + " / " + waves.length + "</strong>",
+      "<span>" + (waveConfig ? waveConfig.name : "Final wave complete") + "</span>",
+      "</div>",
+    ].join("");
+    if (waveMarkup !== lastWaveMarkup) {
+      wavePanelEl.innerHTML = waveMarkup;
+      lastWaveMarkup = waveMarkup;
     }
 
     let towerInfoMarkup = "";
