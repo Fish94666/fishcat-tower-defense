@@ -164,6 +164,7 @@ button:hover {
 
 .tower-info {
   background: rgba(29, 42, 50, 0.06);
+  border: 1px solid rgba(29, 42, 50, 0.08);
 }
 
 .tower-info.is-hidden {
@@ -185,25 +186,56 @@ button:hover {
 }
 
 .tower-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 10px;
-  flex-wrap: wrap;
+  margin-top: 14px;
 }
 
 .tower-action {
-  box-shadow: none;
-  padding: 9px 12px;
+  box-shadow: 0 10px 20px rgba(201, 111, 59, 0.18);
+  padding: 12px 14px;
+  min-height: 72px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  text-align: left;
+  line-height: 1.1;
 }
 
 .tower-action.secondary {
   background: #34736a;
+  box-shadow: 0 10px 20px rgba(52, 115, 106, 0.18);
+}
+
+.tower-action-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.tower-action-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.tower-action-note {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: rgba(29, 42, 50, 0.72);
 }
 
 .tower-action:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.82;
   filter: none;
+  color: rgba(255, 250, 242, 0.92);
+  background: rgba(201, 111, 59, 0.72);
+  box-shadow: none;
 }
 
 .message {
@@ -236,6 +268,10 @@ canvas {
   }
 
   .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tower-actions {
     grid-template-columns: 1fr;
   }
 }

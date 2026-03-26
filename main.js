@@ -12,7 +12,7 @@
   const TILE_SIZE = 64;
   const GRID_COLS = 12;
   const GRID_ROWS = 9;
-  const STARTING_GOLD = 90;
+  const STARTING_GOLD = 65;
   const STARTING_LIVES = 12;
   const TOWER_MAX_LEVEL = 3;
   const TOWER_SELECT_RADIUS = 28;
@@ -23,27 +23,52 @@
   const TOWER_TYPES = {
     basic: {
       label: "Basic Fish",
-      cost: 25,
-      range: TILE_SIZE * 2.15,
-      damage: 11,
-      cooldown: 0.55,
-      upgradeCosts: [35, 60],
-      upgradeDamage: 6,
-      upgradeRange: 18,
-      upgradeCooldownStep: 0.08,
+      cost: 28,
+      range: TILE_SIZE * 1.9,
+      damage: 9,
+      cooldown: 0.58,
+      upgradeCosts: [36, 58],
+      upgradeDamage: 3,
+      upgradeRange: 12,
+      upgradeCooldownStep: 0.04,
       markerColor: "rgba(201, 111, 59, 0.18)",
     },
     sniper: {
       label: "Sniper Fish",
-      cost: 45,
-      range: TILE_SIZE * 3.05,
+      cost: 55,
+      range: TILE_SIZE * 3.0,
       damage: 24,
-      cooldown: 1.05,
-      upgradeCosts: [55, 80],
-      upgradeDamage: 12,
-      upgradeRange: 22,
-      upgradeCooldownStep: 0.1,
+      cooldown: 1.3,
+      upgradeCosts: [70, 95],
+      upgradeDamage: 6,
+      upgradeRange: 14,
+      upgradeCooldownStep: 0.06,
       markerColor: "rgba(52, 115, 106, 0.18)",
+    },
+  };
+
+  const ENEMY_TYPES = {
+    scout: {
+      label: "Scout",
+      roleText: "Fast runner",
+      fallbackColor: "#8b5cf6",
+      accentColor: "#f0abfc",
+      trailColor: "rgba(192, 132, 252, 0.4)",
+      healthColor: "#7dd3fc",
+      healthBack: "rgba(15, 23, 42, 0.22)",
+      priorityColor: "rgba(233, 213, 255, 0.95)",
+      warningColor: "rgba(168, 85, 247, 0.22)",
+    },
+    brute: {
+      label: "Brute",
+      roleText: "Heavy frontliner",
+      fallbackColor: "#8a3b2e",
+      accentColor: "#ffd6a5",
+      trailColor: "rgba(251, 146, 60, 0.28)",
+      healthColor: "#fb923c",
+      healthBack: "rgba(41, 37, 36, 0.3)",
+      priorityColor: "rgba(254, 215, 170, 0.95)",
+      warningColor: "rgba(249, 115, 22, 0.24)",
     },
   };
 
@@ -74,10 +99,42 @@
 
   // Waves describe what to spawn and how quickly enemies appear.
   const waves = [
-    { count: 5, type: "scout", spacing: 1.1 },
-    { count: 8, type: "scout", spacing: 0.85 },
-    { count: 4, type: "brute", spacing: 1.35 },
-    { count: 6, type: "mix", spacing: 0.9 },
+    { count: 5, type: "scout", spacing: 1.05, name: "Scout rush", note: "Fast runners are testing your coverage." },
+    { count: 8, type: "scout", spacing: 0.82, name: "Scout surge", note: "The lane speeds up. Catch the leak threat early." },
+    { count: 4, type: "brute", spacing: 1.3, name: "Brute push", note: "Slow heavies are soaking fire. Keep damage on them." },
+    {
+      count: 10,
+      type: "mix",
+      spacing: 0.9,
+      name: "Scout feint",
+      note: "Scouts pull aim away while brutes step into the lane.",
+      sequence: ["scout", "scout", "scout", "brute", "scout", "scout", "brute", "brute", "scout", "brute"],
+    },
+    { count: 6, type: "brute", spacing: 1.05, name: "Brute wall", note: "This wave rewards steady damage over burst timing." },
+    {
+      count: 12,
+      type: "mix",
+      spacing: 0.78,
+      name: "Split pressure",
+      note: "Scouts slip ahead while brutes hold the center of the lane.",
+      sequence: ["scout", "scout", "brute", "scout", "brute", "scout", "scout", "brute", "brute", "scout", "brute", "brute"],
+    },
+    {
+      count: 14,
+      type: "mix",
+      spacing: 0.7,
+      name: "Cross pressure",
+      note: "Coverage and sustained fire both matter now.",
+      sequence: ["scout", "scout", "scout", "brute", "scout", "brute", "scout", "brute", "scout", "brute", "brute", "scout", "brute", "brute"],
+    },
+    {
+      count: 16,
+      type: "mix",
+      spacing: 0.62,
+      name: "Final crush",
+      note: "Runners screen the last brute line. Hold the lane.",
+      sequence: ["scout", "scout", "brute", "scout", "scout", "brute", "scout", "brute", "scout", "brute", "brute", "scout", "brute", "scout", "brute", "brute"],
+    },
   ];
 
   const enemySpriteConfig = {
@@ -139,28 +196,32 @@
   function makeEnemy(type) {
     if (type === "brute") {
       return {
+        id: state.nextEnemyId++,
         type,
         x: pathPoints[0].x,
         y: pathPoints[0].y,
-        hp: 40,
-        maxHp: 40,
-        speed: 42,
+        hp: 88,
+        maxHp: 88,
+        speed: 40,
         reward: 10,
         pathIndex: 0,
         radius: ENEMY_RADIUS + 4,
+        hitFlash: 0,
       };
     }
 
     return {
+      id: state.nextEnemyId++,
       type: "scout",
       x: pathPoints[0].x,
       y: pathPoints[0].y,
-      hp: 20,
-      maxHp: 20,
-      speed: 58,
-      reward: 7,
+      hp: 22,
+      maxHp: 22,
+      speed: 64,
+      reward: 5,
       pathIndex: 0,
       radius: ENEMY_RADIUS,
+      hitFlash: 0,
     };
   }
 
@@ -182,6 +243,7 @@
       cooldown: towerType.cooldown,
       cooldownLeft: 0,
       angle: 0,
+      targetEnemyId: null,
     };
   }
 
@@ -196,12 +258,16 @@
       selectedBuildType: "basic",
       selectedTowerId: null,
       nextTowerId: 1,
+      nextEnemyId: 1,
       enemies: [],
       effects: [],
       hoveredCell: null,
       spawnTimer: 0,
       spawnedInWave: 0,
-      queuedWaveDelay: 0.8,
+      queuedWaveDelay: 0.6,
+      visualTime: 0,
+      bannerText: "",
+      bannerTimer: 0,
       message: DEFAULT_MESSAGE,
     };
   }
@@ -232,6 +298,40 @@
 
   function getTowerType(type) {
     return TOWER_TYPES[type];
+  }
+
+  function getEnemyType(type) {
+    return ENEMY_TYPES[type] || ENEMY_TYPES.scout;
+  }
+
+  function getWaveAnnouncement(index) {
+    const wave = waves[index];
+    if (!wave) {
+      return "";
+    }
+    return "Wave " + (index + 1) + ": " + wave.note;
+  }
+
+  function getWaveBannerText(index) {
+    const wave = waves[index];
+    if (!wave) {
+      return "";
+    }
+    return "Wave " + (index + 1) + " - " + wave.name;
+  }
+
+  function showBattleBanner(text, duration) {
+    state.bannerText = text;
+    state.bannerTimer = duration ?? 1.5;
+  }
+
+  function announceWave(index) {
+    const message = getWaveAnnouncement(index);
+    if (!message) {
+      return;
+    }
+    state.message = message;
+    showBattleBanner(getWaveBannerText(index), 1.6);
   }
 
   function getSelectedBuildType() {
@@ -333,7 +433,7 @@
   function startGame() {
     state = resetState();
     state.mode = "playing";
-    state.message = "Wave 1 is coming in. Place a few towers.";
+    announceWave(0);
     syncHud();
     draw();
   }
@@ -342,6 +442,10 @@
     const wave = waves[index];
     if (!wave) {
       return null;
+    }
+
+    if (Array.isArray(wave.sequence) && wave.sequence[state.spawnedInWave]) {
+      return makeEnemy(wave.sequence[state.spawnedInWave]);
     }
 
     if (wave.type === "mix") {
@@ -382,22 +486,92 @@
         state.waveIndex += 1;
         state.spawnedInWave = 0;
         state.spawnTimer = 0;
-        state.queuedWaveDelay = 1.2;
+        state.queuedWaveDelay = 0.8;
         if (waves[state.waveIndex]) {
-          state.message = "Wave " + (state.waveIndex + 1) + " begins.";
+          announceWave(state.waveIndex);
         }
       }
     }
+  }
+
+  function getEnemyRemainingCells(enemy) {
+    return Math.max(0, pathPoints.length - 1 - enemy.pathIndex);
+  }
+
+  function getEnemyDirection(enemy) {
+    const nextPoint = pathPoints[enemy.pathIndex + 1];
+    const fallbackPoint = pathPoints[Math.max(0, enemy.pathIndex)];
+    const dx = nextPoint ? nextPoint.x - enemy.x : enemy.x - fallbackPoint.x;
+    const dy = nextPoint ? nextPoint.y - enemy.y : enemy.y - fallbackPoint.y;
+    const length = Math.hypot(dx, dy) || 1;
+    return {
+      x: dx / length,
+      y: dy / length,
+    };
+  }
+
+  function getEnemyProgressScore(enemy) {
+    const nextPoint = pathPoints[enemy.pathIndex + 1];
+    if (!nextPoint) {
+      return pathPoints.length;
+    }
+
+    const distance = Math.hypot(nextPoint.x - enemy.x, nextPoint.y - enemy.y);
+    const segmentProgress = 1 - Math.min(1, distance / TILE_SIZE);
+    return enemy.pathIndex + segmentProgress;
+  }
+
+  function getEnemyThreatScore(enemy) {
+    if (enemy.hp <= 0) {
+      return -1;
+    }
+    const remainingCells = getEnemyRemainingCells(enemy);
+    let score = getEnemyProgressScore(enemy) * 100;
+    if (enemy.type === "scout") {
+      score += 12;
+    }
+    if (enemy.type === "brute") {
+      score += (enemy.hp / enemy.maxHp) * 10;
+    }
+    if (remainingCells <= 4) {
+      score += enemy.type === "scout" ? 34 : 22;
+    }
+    return score;
+  }
+
+  function getPriorityEnemy() {
+    let bestEnemy = null;
+    let bestScore = -1;
+    for (const enemy of state.enemies) {
+      const score = getEnemyThreatScore(enemy);
+      if (score > bestScore) {
+        bestScore = score;
+        bestEnemy = enemy;
+      }
+    }
+    return bestEnemy;
+  }
+
+  function getTargetedEnemyCounts() {
+    const counts = {};
+    for (const tower of state.towers) {
+      if (tower.targetEnemyId === null) {
+        continue;
+      }
+      counts[tower.targetEnemyId] = (counts[tower.targetEnemyId] || 0) + 1;
+    }
+    return counts;
   }
 
   function updateEnemies(dt) {
     const survivors = [];
 
     for (const enemy of state.enemies) {
+      enemy.hitFlash = Math.max(0, enemy.hitFlash - dt * 3.5);
       const nextPoint = pathPoints[enemy.pathIndex + 1];
       if (!nextPoint) {
         state.lives -= 1;
-        state.message = "An enemy slipped through.";
+        state.message = getEnemyType(enemy.type).label + " slipped through.";
         if (state.lives <= 0) {
           state.mode = "lost";
           state.message = "The line is broken. Press start to retry.";
@@ -431,10 +605,14 @@
     // Towers prefer the enemy farthest along the path among targets in range.
     for (const tower of state.towers) {
       tower.cooldownLeft = Math.max(0, tower.cooldownLeft - dt);
+      tower.targetEnemyId = null;
       let target = null;
       let bestProgress = -1;
 
       for (const enemy of state.enemies) {
+        if (enemy.hp <= 0) {
+          continue;
+        }
         const distance = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
         if (distance <= tower.range) {
           const progressScore = enemy.pathIndex * 1000 - distance;
@@ -449,35 +627,40 @@
         continue;
       }
 
+      tower.targetEnemyId = target.id;
       tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
       if (tower.cooldownLeft > 0) {
         continue;
       }
 
       target.hp -= tower.damage;
+      target.hitFlash = Math.min(1, target.hitFlash + (tower.type === "sniper" ? 0.85 : 0.55));
       tower.cooldownLeft = tower.cooldown;
       state.effects.push({
         x1: tower.x,
         y1: tower.y,
         x2: target.x,
         y2: target.y,
-        life: 0.08,
+        life: tower.type === "sniper" ? 0.12 : 0.08,
+        duration: tower.type === "sniper" ? 0.12 : 0.08,
+        color: tower.type === "sniper" ? "#b8f2e6" : "#ffe8a3",
+        width: tower.type === "sniper" ? 4 : 3,
+        impactColor: tower.type === "sniper" ? "rgba(184, 242, 230, 0.9)" : "rgba(255, 232, 163, 0.9)",
+        impactRadius: tower.type === "sniper" ? 12 : 8,
       });
 
       if (target.hp <= 0) {
         state.gold += target.reward;
-        state.message = "Enemy defeated. +" + target.reward + " gold.";
       }
     }
+
+    state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
   }
 
   function updateEffects(dt) {
     state.effects = state.effects
       .map((effect) => ({
-        x1: effect.x1,
-        y1: effect.y1,
-        x2: effect.x2,
-        y2: effect.y2,
+        ...effect,
         life: effect.life - dt,
       }))
       .filter((effect) => effect.life > 0);
@@ -486,6 +669,8 @@
   function update(dt) {
     // The simulation step updates game systems first, then the HUD reflects the new state.
     if (state.mode === "playing") {
+      state.visualTime += dt;
+      state.bannerTimer = Math.max(0, state.bannerTimer - dt);
       updateWave(dt);
       updateEnemies(dt);
       updateTowers(dt);
@@ -683,7 +868,7 @@
   }
 
   function drawEnemyFallback(enemy) {
-    ctx.fillStyle = enemy.type === "brute" ? "#7c2d2d" : "#9d4edd";
+    ctx.fillStyle = getEnemyType(enemy.type).fallbackColor;
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -714,30 +899,260 @@
     );
   }
 
-  function drawEnemies() {
-    for (const enemy of state.enemies) {
-      drawEnemySprite(enemy);
+  function drawTargetReticle(enemy, color, radius, lineWidth) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - radius, enemy.y - radius);
+    ctx.lineTo(enemy.x - radius / 2, enemy.y - radius);
+    ctx.moveTo(enemy.x - radius, enemy.y - radius);
+    ctx.lineTo(enemy.x - radius, enemy.y - radius / 2);
+    ctx.moveTo(enemy.x + radius, enemy.y - radius);
+    ctx.lineTo(enemy.x + radius / 2, enemy.y - radius);
+    ctx.moveTo(enemy.x + radius, enemy.y - radius);
+    ctx.lineTo(enemy.x + radius, enemy.y - radius / 2);
+    ctx.moveTo(enemy.x - radius, enemy.y + radius);
+    ctx.lineTo(enemy.x - radius / 2, enemy.y + radius);
+    ctx.moveTo(enemy.x - radius, enemy.y + radius);
+    ctx.lineTo(enemy.x - radius, enemy.y + radius / 2);
+    ctx.moveTo(enemy.x + radius, enemy.y + radius);
+    ctx.lineTo(enemy.x + radius / 2, enemy.y + radius);
+    ctx.moveTo(enemy.x + radius, enemy.y + radius);
+    ctx.lineTo(enemy.x + radius, enemy.y + radius / 2);
+    ctx.stroke();
+    ctx.restore();
+  }
 
-      const barWidth = 34;
-      const ratio = Math.max(0, enemy.hp / enemy.maxHp);
-      ctx.fillStyle = "rgba(29, 42, 50, 0.25)";
-      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth, 6);
-      ctx.fillStyle = "#90be6d";
-      ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth * ratio, 6);
+  function drawEnemyUnderlay(enemy, targetCount, isPriority) {
+    const enemyType = getEnemyType(enemy.type);
+    const remainingCells = getEnemyRemainingCells(enemy);
+    const pulse = 0.72 + Math.sin(state.visualTime * 7 + enemy.id) * 0.18;
+
+    ctx.save();
+    if (enemy.type === "scout") {
+      const direction = getEnemyDirection(enemy);
+      const perpendicularX = -direction.y;
+      const perpendicularY = direction.x;
+      ctx.strokeStyle = enemyType.trailColor;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      for (let index = 0; index < 2; index += 1) {
+        const offset = index === 0 ? -6 : 6;
+        const startX = enemy.x - direction.x * 8 + perpendicularX * offset;
+        const startY = enemy.y - direction.y * 8 + perpendicularY * offset;
+        const endX = enemy.x - direction.x * 24 + perpendicularX * offset;
+        const endY = enemy.y - direction.y * 24 + perpendicularY * offset;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = "rgba(54, 34, 24, 0.18)";
+      ctx.beginPath();
+      ctx.ellipse(enemy.x, enemy.y + enemy.radius + 4, enemy.radius + 8, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (isPriority || remainingCells <= 3) {
+      ctx.fillStyle = enemyType.warningColor;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.radius + 12 + pulse * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    if (targetCount > 0 || isPriority) {
+      drawTargetReticle(
+        enemy,
+        isPriority ? enemyType.priorityColor : "rgba(255, 250, 240, 0.9)",
+        enemy.radius + 10 + (targetCount > 1 ? 3 : 0),
+        isPriority ? 3 : 2
+      );
+    }
+  }
+
+  function drawEnemyOverlay(enemy, targetCount, isPriority) {
+    const enemyType = getEnemyType(enemy.type);
+    const remainingCells = getEnemyRemainingCells(enemy);
+    const barWidth = enemy.type === "brute" ? 40 : 30;
+    const barHeight = enemy.type === "brute" ? 7 : 5;
+    const ratio = Math.max(0, enemy.hp / enemy.maxHp);
+    const flashAlpha = enemy.hitFlash * 0.45;
+
+    ctx.save();
+    if (enemy.hitFlash > 0) {
+      ctx.fillStyle = "rgba(255, 255, 255, " + flashAlpha.toFixed(3) + ")";
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.radius + 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = enemyType.healthBack;
+    ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth, barHeight);
+    ctx.fillStyle = enemyType.healthColor;
+    ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth * ratio, barHeight);
+
+    if (enemy.type === "brute") {
+      ctx.strokeStyle = "rgba(84, 40, 31, 0.8)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(enemy.x - barWidth / 2, enemy.y - enemy.radius - 14, barWidth, barHeight);
+    }
+
+    if (enemy.type === "scout") {
+      const badgeY = enemy.y - enemy.radius - 24;
+      ctx.strokeStyle = "rgba(240, 171, 252, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(enemy.x - 8, badgeY);
+      ctx.lineTo(enemy.x - 2, badgeY - 4);
+      ctx.lineTo(enemy.x - 2, badgeY + 4);
+      ctx.moveTo(enemy.x + 2, badgeY);
+      ctx.lineTo(enemy.x + 8, badgeY - 4);
+      ctx.lineTo(enemy.x + 8, badgeY + 4);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(255, 214, 165, 0.95)";
+      ctx.beginPath();
+      ctx.moveTo(enemy.x, enemy.y - enemy.radius - 20);
+      ctx.lineTo(enemy.x - 7, enemy.y - enemy.radius - 8);
+      ctx.lineTo(enemy.x + 7, enemy.y - enemy.radius - 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (isPriority) {
+      ctx.fillStyle = enemyType.priorityColor;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y - enemy.radius - 30, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#2b1d12";
+      ctx.font = "700 12px Trebuchet MS";
+      ctx.textAlign = "center";
+      ctx.fillText("!", enemy.x, enemy.y - enemy.radius - 26);
+    }
+
+    if (remainingCells <= 3) {
+      ctx.strokeStyle = "rgba(255, 248, 220, 0.85)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.radius + 16, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if (targetCount > 1) {
+      ctx.fillStyle = "rgba(255, 250, 240, 0.92)";
+      ctx.font = "700 11px Trebuchet MS";
+      ctx.textAlign = "center";
+      ctx.fillText(String(targetCount), enemy.x, enemy.y + enemy.radius + 18);
+    }
+    ctx.restore();
+  }
+
+  function drawEnemies() {
+    const priorityEnemy = getPriorityEnemy();
+    const targetedCounts = getTargetedEnemyCounts();
+    for (const enemy of state.enemies) {
+      const targetCount = targetedCounts[enemy.id] || 0;
+      drawEnemyUnderlay(enemy, targetCount, !!priorityEnemy && priorityEnemy.id === enemy.id);
+      drawEnemySprite(enemy);
+      drawEnemyOverlay(enemy, targetCount, !!priorityEnemy && priorityEnemy.id === enemy.id);
     }
   }
 
   function drawEffects() {
     ctx.save();
-    ctx.lineWidth = 3;
     for (const effect of state.effects) {
-      ctx.globalAlpha = Math.max(0.15, effect.life / 0.08);
-      ctx.strokeStyle = "#fef3c7";
+      const maxLife = effect.duration || 0.08;
+      ctx.globalAlpha = Math.max(0.15, effect.life / maxLife);
+      ctx.lineWidth = effect.width || 3;
+      ctx.strokeStyle = effect.color || "#fef3c7";
       ctx.beginPath();
       ctx.moveTo(effect.x1, effect.y1);
       ctx.lineTo(effect.x2, effect.y2);
       ctx.stroke();
+
+      if (effect.impactRadius) {
+        ctx.fillStyle = effect.impactColor || "rgba(255, 243, 199, 0.9)";
+        ctx.beginPath();
+        ctx.arc(effect.x2, effect.y2, effect.impactRadius * (0.55 + effect.life * 3), 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
+    ctx.restore();
+  }
+
+  function traceRoundedRect(x, y, width, height, radius) {
+    const clampedRadius = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + clampedRadius, y);
+    ctx.lineTo(x + width - clampedRadius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + clampedRadius);
+    ctx.lineTo(x + width, y + height - clampedRadius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - clampedRadius, y + height);
+    ctx.lineTo(x + clampedRadius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - clampedRadius);
+    ctx.lineTo(x, y + clampedRadius);
+    ctx.quadraticCurveTo(x, y, x + clampedRadius, y);
+    ctx.closePath();
+  }
+
+  function drawBattleBanner() {
+    if (state.mode !== "playing" || state.bannerTimer <= 0 || !state.bannerText) {
+      return;
+    }
+
+    const alpha = Math.min(1, state.bannerTimer / 0.45);
+    const width = Math.min(canvas.width - 80, 360);
+    const height = 40;
+    const x = (canvas.width - width) / 2;
+    const y = 18;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(29, 42, 50, 0.76)";
+    ctx.strokeStyle = "rgba(255, 250, 240, 0.35)";
+    ctx.lineWidth = 2;
+    traceRoundedRect(x, y, width, height, 18);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff9ef";
+    ctx.font = "700 18px Trebuchet MS";
+    ctx.textAlign = "center";
+    ctx.fillText(state.bannerText, canvas.width / 2, y + 25);
+    ctx.restore();
+  }
+
+  function drawPriorityWarning() {
+    if (state.mode !== "playing") {
+      return;
+    }
+
+    const priorityEnemy = getPriorityEnemy();
+    if (!priorityEnemy || getEnemyRemainingCells(priorityEnemy) > 3) {
+      return;
+    }
+
+    const enemyType = getEnemyType(priorityEnemy.type);
+    const text = priorityEnemy.type === "scout"
+      ? "Priority: stop the scout leak."
+      : "Priority: burn down the brute.";
+    const width = 280;
+    const height = 34;
+    const x = canvas.width - width - 18;
+    const y = 18;
+    ctx.save();
+    ctx.fillStyle = "rgba(29, 42, 50, 0.82)";
+    traceRoundedRect(x, y, width, height, 16);
+    ctx.fill();
+    ctx.fillStyle = enemyType.accentColor;
+    ctx.fillRect(x + 10, y + 9, 8, 16);
+    ctx.fillStyle = "#fff9ef";
+    ctx.font = "700 15px Trebuchet MS";
+    ctx.textAlign = "left";
+    ctx.fillText(text, x + 30, y + 22);
     ctx.restore();
   }
 
@@ -774,6 +1189,8 @@
     drawTowers();
     drawEnemies();
     drawEffects();
+    drawBattleBanner();
+    drawPriorityWarning();
     drawOverlay();
   }
 
@@ -814,6 +1231,8 @@
       towerInfoEl.classList.remove("is-hidden");
       const upgradeCost = getTowerUpgradeCost(selectedTower);
       const sellValue = getTowerSellValue(selectedTower);
+      const upgradeLabel = upgradeCost === null ? "MAX" : upgradeCost + "g";
+      const sellLabel = sellValue + "g";
       towerInfoMarkup = [
         "<h2>Selected Tower</h2>",
         "<p><strong>Level</strong>: " + selectedTower.level + " / " + TOWER_MAX_LEVEL + "</p>",
@@ -822,12 +1241,17 @@
         "<p><strong>Damage</strong>: " + selectedTower.damage + "</p>",
         "<p><strong>Attack Speed</strong>: " + getTowerAttacksPerSecond(selectedTower).toFixed(2) + "/s</p>",
         "<p><strong>Range</strong>: " + selectedTower.range.toFixed(0) + "</p>",
-        "<p><strong>Upgrade</strong>: " + (upgradeCost === null ? "MAX" : upgradeCost + " gold") + "</p>",
-        "<p><strong>Sell</strong>: " + sellValue + " gold</p>",
         "<div class=\"tower-actions\">",
-        "<button type=\"button\" class=\"tower-action\" data-action=\"upgrade\" " + (canUpgradeTower(selectedTower) ? "" : "disabled") + ">Upgrade</button>",
-        "<button type=\"button\" class=\"tower-action secondary\" data-action=\"sell\">Sell</button>",
+        "<button type=\"button\" class=\"tower-action\" data-action=\"upgrade\" " + (canUpgradeTower(selectedTower) ? "" : "disabled") + ">"
+          + "<span class=\"tower-action-label\">Upgrade</span>"
+          + "<span class=\"tower-action-value\">" + upgradeLabel + "</span>"
+          + "</button>",
+        "<button type=\"button\" class=\"tower-action secondary\" data-action=\"sell\">"
+          + "<span class=\"tower-action-label\">Sell</span>"
+          + "<span class=\"tower-action-value\">" + sellLabel + "</span>"
+          + "</button>",
         "</div>",
+        "<p class=\"tower-action-note\">Upgrade cost and sell value are shown directly on the action buttons.</p>",
       ].join("");
     }
     if (towerInfoMarkup !== lastTowerInfoMarkup) {
