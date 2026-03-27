@@ -15,16 +15,16 @@
   const GRID_COLS = 12;
   const GRID_ROWS = 9;
   const STARTING_GOLD = 65;
-  const STARTING_LIVES = 12;
+  const STARTING_LIVES = 3;
   const TOWER_MAX_LEVEL = 3;
   const TOWER_SELECT_RADIUS = 28;
   const FIXED_DT = 1 / 60;
   const ENEMY_RADIUS = 14;
-  const DEFAULT_MESSAGE = "Press start, then place towers on grass tiles.";
+  const DEFAULT_MESSAGE = "按開始後，把塔放在草地格上。";
 
   const TOWER_TYPES = {
     basic: {
-      label: "Basic Fish",
+      label: "基礎魚塔",
       cost: 28,
       range: TILE_SIZE * 1.9,
       damage: 9,
@@ -36,7 +36,7 @@
       markerColor: "rgba(201, 111, 59, 0.18)",
     },
     sniper: {
-      label: "Sniper Fish",
+      label: "狙擊魚塔",
       cost: 55,
       range: TILE_SIZE * 3.0,
       damage: 24,
@@ -51,8 +51,8 @@
 
   const ENEMY_TYPES = {
     scout: {
-      label: "Scout",
-      roleText: "Fast runner",
+      label: "斥候怪",
+      roleText: "高速突進",
       fallbackColor: "#8b5cf6",
       accentColor: "#f0abfc",
       trailColor: "rgba(192, 132, 252, 0.4)",
@@ -62,8 +62,8 @@
       warningColor: "rgba(168, 85, 247, 0.22)",
     },
     brute: {
-      label: "Brute",
-      roleText: "Heavy frontliner",
+      label: "重裝怪",
+      roleText: "高血前排",
       fallbackColor: "#8a3b2e",
       accentColor: "#ffd6a5",
       trailColor: "rgba(251, 146, 60, 0.28)",
@@ -101,40 +101,40 @@
 
   // Waves describe what to spawn and how quickly enemies appear.
   const waves = [
-    { count: 5, type: "scout", spacing: 1.05, name: "Scout rush", note: "Fast runners are testing your coverage." },
-    { count: 8, type: "scout", spacing: 0.82, name: "Scout surge", note: "The lane speeds up. Catch the leak threat early." },
-    { count: 4, type: "brute", spacing: 1.3, name: "Brute push", note: "Slow heavies are soaking fire. Keep damage on them." },
+    { count: 5, type: "scout", spacing: 1.05, name: "斥候突襲", note: "高速敵人正在測試你的防線覆蓋。" },
+    { count: 8, type: "scout", spacing: 0.82, name: "斥候急襲", note: "路線節奏加快了，先攔下快漏掉的敵人。" },
+    { count: 4, type: "brute", spacing: 1.3, name: "重裝推進", note: "慢速高血敵人正在吃火力，記得持續輸出。" },
     {
       count: 10,
       type: "mix",
       spacing: 0.9,
-      name: "Scout feint",
-      note: "Scouts pull aim away while brutes step into the lane.",
+      name: "斥候佯攻",
+      note: "斥候會先拉走火力，重裝怪接著頂上前線。",
       sequence: ["scout", "scout", "scout", "brute", "scout", "scout", "brute", "brute", "scout", "brute"],
     },
-    { count: 6, type: "brute", spacing: 1.05, name: "Brute wall", note: "This wave rewards steady damage over burst timing." },
+    { count: 6, type: "brute", spacing: 1.05, name: "重裝防線", note: "這一波更考驗穩定輸出，不是爆發時機。" },
     {
       count: 12,
       type: "mix",
       spacing: 0.78,
-      name: "Split pressure",
-      note: "Scouts slip ahead while brutes hold the center of the lane.",
+      name: "分線壓力",
+      note: "斥候會往前偷跑，重裝怪則穩穩卡住中段。",
       sequence: ["scout", "scout", "brute", "scout", "brute", "scout", "scout", "brute", "brute", "scout", "brute", "brute"],
     },
     {
       count: 14,
       type: "mix",
       spacing: 0.7,
-      name: "Cross pressure",
-      note: "Coverage and sustained fire both matter now.",
+      name: "交錯壓力",
+      note: "現在同時考驗防線覆蓋與持續火力。",
       sequence: ["scout", "scout", "scout", "brute", "scout", "brute", "scout", "brute", "scout", "brute", "brute", "scout", "brute", "brute"],
     },
     {
       count: 16,
       type: "mix",
       spacing: 0.62,
-      name: "Final crush",
-      note: "Runners screen the last brute line. Hold the lane.",
+      name: "最終猛攻",
+      note: "快怪會替最後的重裝線掩護，撐住整條路線。",
       sequence: ["scout", "scout", "brute", "scout", "scout", "brute", "scout", "brute", "scout", "brute", "brute", "scout", "brute", "scout", "brute", "brute"],
     },
   ];
@@ -313,7 +313,7 @@
     if (!wave) {
       return "";
     }
-    return "Wave " + (index + 1) + ": " + wave.note;
+    return "第 " + (index + 1) + " 波：" + wave.note;
   }
 
   function getWaveBannerText(index) {
@@ -321,7 +321,7 @@
     if (!wave) {
       return "";
     }
-    return "Wave " + (index + 1) + " - " + wave.name;
+    return "第 " + (index + 1) + " 波 - " + wave.name;
   }
 
   function showBattleBanner(text, duration) {
@@ -373,7 +373,7 @@
       return;
     }
     state.selectedBuildType = type;
-    state.message = getTowerType(type).label + " ready to place.";
+    state.message = getTowerType(type).label + " 已準備放置。";
   }
 
   function selectTowerById(towerId) {
@@ -387,18 +387,18 @@
   function upgradeSelectedTower() {
     const tower = getSelectedTower();
     if (!tower) {
-      state.message = "Select a tower first.";
+      state.message = "請先選一座塔。";
       return;
     }
 
     const upgradeCost = getTowerUpgradeCost(tower);
     if (upgradeCost === null) {
-      state.message = "This tower is already max level.";
+      state.message = "這座塔已滿級。";
       return;
     }
 
     if (state.gold < upgradeCost) {
-      state.message = "Not enough gold to upgrade.";
+      state.message = "金錢不夠，無法升級。";
       return;
     }
 
@@ -410,13 +410,13 @@
     tower.range += towerType.upgradeRange;
     tower.cooldown = Math.max(0.28, tower.cooldown - towerType.upgradeCooldownStep);
     tower.cooldownLeft = Math.min(tower.cooldownLeft, tower.cooldown);
-    state.message = "Tower upgraded to level " + tower.level + ".";
+    state.message = "塔已升到 " + tower.level + " 級。";
   }
 
   function sellSelectedTower() {
     const tower = getSelectedTower();
     if (!tower) {
-      state.message = "Select a tower first.";
+      state.message = "請先選一座塔。";
       return;
     }
 
@@ -424,7 +424,7 @@
     state.gold += sellValue;
     state.towers = state.towers.filter((candidate) => candidate.id !== tower.id);
     clearTowerSelection();
-    state.message = "Tower sold for " + sellValue + " gold.";
+    state.message = "已賣出塔，獲得 " + sellValue + " 金。";
   }
 
   function canBuildAt(x, y) {
@@ -469,7 +469,7 @@
     if (!wave) {
       if (state.enemies.length === 0) {
         state.mode = "won";
-        state.message = "You held every wave. Press start to play again.";
+        state.message = "你撐過所有波次了，按開始再玩一次。";
       }
       return;
     }
@@ -575,10 +575,10 @@
       const nextPoint = pathPoints[enemy.pathIndex + 1];
       if (!nextPoint) {
         state.lives -= 1;
-        state.message = getEnemyType(enemy.type).label + " slipped through.";
+        state.message = getEnemyType(enemy.type).label + " 突破防線了。";
         if (state.lives <= 0) {
           state.mode = "lost";
-          state.message = "The line is broken. Press start to retry.";
+          state.message = "防線被突破了，按開始重新挑戰。";
         }
         continue;
       }
@@ -720,17 +720,17 @@
   function placeTower(gridX, gridY) {
     const selectedBuildType = getSelectedBuildType();
     if (state.mode !== "playing") {
-      state.message = "Press start before placing towers.";
+      state.message = "請先按開始再放塔。";
       return;
     }
 
     if (!canBuildAt(gridX, gridY)) {
-      state.message = "That tile is blocked.";
+      state.message = "那個格子不能放塔。";
       return;
     }
 
     if (!selectedBuildType || state.gold < selectedBuildType.cost) {
-      state.message = "Not enough gold yet.";
+      state.message = "金錢還不夠。";
       return;
     }
 
@@ -739,7 +739,7 @@
     state.nextTowerId += 1;
     state.towers.push(tower);
     selectTowerById(tower.id);
-    state.message = selectedBuildType.label + " deployed.";
+    state.message = selectedBuildType.label + " 已部署。";
   }
 
   function getTowerAtPosition(x, y) {
@@ -1158,8 +1158,8 @@
 
     const enemyType = getEnemyType(priorityEnemy.type);
     const text = priorityEnemy.type === "scout"
-      ? "Priority: stop the scout leak."
-      : "Priority: burn down the brute.";
+      ? "優先處理：攔下斥候怪。"
+      : "優先處理：集中火力打重裝怪。";
     const width = 280;
     const height = 34;
     const x = canvas.width - width - 18;
@@ -1189,11 +1189,11 @@
     ctx.textAlign = "center";
     ctx.font = "700 34px Trebuchet MS";
 
-    let title = "Fishcat Tower Defense";
+    let title = "魚貓塔防";
     if (state.mode === "won") {
-      title = "Victory";
+      title = "勝利";
     } else if (state.mode === "lost") {
-      title = "Defeat";
+      title = "失敗";
     }
 
     ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 18);
@@ -1220,13 +1220,13 @@
     const waveConfig = waves[Math.min(state.waveIndex, waves.length - 1)] || null;
     const selectedTower = getSelectedTower();
     const buildPanelMarkup = [
-      "<h2>Build Towers</h2>",
-      "<p>Choose a tower, then click a grass tile to place it.</p>",
+      "<h2>建造塔防</h2>",
+      "<p>先選一種塔，再點草地格把它放上去。</p>",
       "<div class=\"build-options\">",
       Object.entries(TOWER_TYPES).map(([type, towerType]) =>
         "<button type=\"button\" class=\"build-option" + (state.selectedBuildType === type ? " is-selected" : "") + "\" data-build-type=\"" + type + "\">"
         + "<strong>" + towerType.label + " - " + towerType.cost + "g</strong>"
-        + "<small>DMG " + towerType.damage + " | RNG " + towerType.range.toFixed(0) + " | SPD " + (1 / towerType.cooldown).toFixed(2) + "/s</small>"
+        + "<small>傷害 " + towerType.damage + " | 射程 " + towerType.range.toFixed(0) + " | 攻速 " + (1 / towerType.cooldown).toFixed(2) + "/秒</small>"
         + "</button>"
       ).join("")
       + "</div>",
@@ -1238,7 +1238,7 @@
 
     const lifeMarkup = [
       "<div class=\"life-chip\">",
-      "<strong>Lives</strong>",
+      "<strong>生命</strong>",
       "<span>" + state.lives + "</span>",
       "</div>",
     ].join("");
@@ -1248,9 +1248,9 @@
     }
 
     const economyMarkup = [
-      "<h2>Tower Economy</h2>",
+      "<h2>金錢狀態</h2>",
       "<div class=\"economy-chip\">",
-      "<strong>Gold</strong>",
+      "<strong>金錢</strong>",
       "<span>" + state.gold + "g</span>",
       "</div>",
     ].join("");
@@ -1261,8 +1261,8 @@
 
     const waveMarkup = [
       "<div class=\"wave-chip\">",
-      "<strong>Wave " + currentWave + " / " + waves.length + "</strong>",
-      "<span>" + (waveConfig ? waveConfig.name : "Final wave complete") + "</span>",
+      "<strong>第 " + currentWave + " / " + waves.length + " 波</strong>",
+      "<span>" + (waveConfig ? waveConfig.name : "所有波次已完成") + "</span>",
       "</div>",
     ].join("");
     if (waveMarkup !== lastWaveMarkup) {
@@ -1277,27 +1277,27 @@
       towerInfoEl.classList.remove("is-hidden");
       const upgradeCost = getTowerUpgradeCost(selectedTower);
       const sellValue = getTowerSellValue(selectedTower);
-      const upgradeLabel = upgradeCost === null ? "MAX" : upgradeCost + "g";
+      const upgradeLabel = upgradeCost === null ? "已滿級" : upgradeCost + "g";
       const sellLabel = sellValue + "g";
       towerInfoMarkup = [
-        "<h2>Selected Tower</h2>",
-        "<p><strong>Level</strong>: " + selectedTower.level + " / " + TOWER_MAX_LEVEL + "</p>",
-        "<p><strong>Type</strong>: " + getTowerType(selectedTower.type).label + "</p>",
-        "<p><strong>Grid</strong>: " + selectedTower.gridX + ", " + selectedTower.gridY + "</p>",
-        "<p><strong>Damage</strong>: " + selectedTower.damage + "</p>",
-        "<p><strong>Attack Speed</strong>: " + getTowerAttacksPerSecond(selectedTower).toFixed(2) + "/s</p>",
-        "<p><strong>Range</strong>: " + selectedTower.range.toFixed(0) + "</p>",
+        "<h2>已選塔</h2>",
+        "<p><strong>等級</strong>：" + selectedTower.level + " / " + TOWER_MAX_LEVEL + "</p>",
+        "<p><strong>類型</strong>：" + getTowerType(selectedTower.type).label + "</p>",
+        "<p><strong>格位</strong>：" + selectedTower.gridX + ", " + selectedTower.gridY + "</p>",
+        "<p><strong>傷害</strong>：" + selectedTower.damage + "</p>",
+        "<p><strong>攻速</strong>：" + getTowerAttacksPerSecond(selectedTower).toFixed(2) + "/秒</p>",
+        "<p><strong>射程</strong>：" + selectedTower.range.toFixed(0) + "</p>",
         "<div class=\"tower-actions\">",
         "<button type=\"button\" class=\"tower-action\" data-action=\"upgrade\" " + (canUpgradeTower(selectedTower) ? "" : "disabled") + ">"
-          + "<span class=\"tower-action-label\">Upgrade</span>"
+          + "<span class=\"tower-action-label\">升級</span>"
           + "<span class=\"tower-action-value\">" + upgradeLabel + "</span>"
           + "</button>",
         "<button type=\"button\" class=\"tower-action secondary\" data-action=\"sell\">"
-          + "<span class=\"tower-action-label\">Sell</span>"
+          + "<span class=\"tower-action-label\">賣出</span>"
           + "<span class=\"tower-action-value\">" + sellLabel + "</span>"
           + "</button>",
         "</div>",
-        "<p class=\"tower-action-note\">Upgrade cost and sell value are shown directly on the action buttons.</p>",
+        "<p class=\"tower-action-note\">升級費用與賣出回收額會直接顯示在按鈕上。</p>",
       ].join("");
     }
     if (towerInfoMarkup !== lastTowerInfoMarkup) {
@@ -1355,14 +1355,14 @@
     if (clickedTower) {
       if (clickedTower.id === state.selectedTowerId) {
         clearTowerSelection();
-        state.message = "Tower deselected.";
+        state.message = "已取消選擇塔。";
         syncHud();
         draw();
         return;
       }
 
       selectTowerById(clickedTower.id);
-      state.message = "Tower selected.";
+      state.message = "已選擇塔。";
       syncHud();
       draw();
       return;
@@ -1376,7 +1376,7 @@
     }
 
     clearTowerSelection();
-    state.message = "Selection cleared.";
+    state.message = "已清除選擇。";
     syncHud();
     draw();
   });
@@ -1433,7 +1433,7 @@
     const selectedTower = getSelectedTower();
     const payload = {
       mode: state.mode,
-      coordinateSystem: "origin=(top-left), +x right, +y down, positions in canvas pixels, grid in tile indices",
+      coordinateSystem: "原點在左上，x 軸向右、y 軸向下；位置使用畫布像素，格位使用地圖索引",
       resources: {
         gold: state.gold,
         lives: state.lives,

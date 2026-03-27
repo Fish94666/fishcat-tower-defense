@@ -1,26 +1,26 @@
-# fishcat-tower-defense
+# 魚貓塔防
 
-A small browser tower defense game built with HTML, CSS, and JavaScript.
+這是一個用 HTML、CSS 和 JavaScript 製作的小型瀏覽器塔防遊戲。
 
-The current version includes:
+目前版本包含：
 
-- Two tower types: `Basic Fish` and `Sniper Fish`
-- An 8-wave run with clearer `scout` / `brute` enemy roles
-- Selected-tower actions for upgrade and sell, with money shown directly on the buttons
-- A split HUD layout where lives stay near the controls, gold sits beside tower details, and wave status appears above the map
+- 兩種塔：`基礎魚塔` 和 `狙擊魚塔`
+- 共 8 波的關卡流程，`斥候怪` 和 `重裝怪` 的定位更清楚
+- 選中塔之後可以直接升級或賣出，而且金額直接顯示在按鈕上
+- HUD 已分區：生命靠近控制區、金錢靠近塔資訊、波數顯示在地圖上方
 
-## Play locally
+## 本機遊玩
 
-Open `index.html` in a browser.
+直接用瀏覽器開啟 `index.html` 即可。
 
-## How To Read The HUD
+## HUD 怎麼看
 
-- `Lives` are shown near the start controls on the left panel.
-- `Gold` is shown in the `Tower Economy` panel near the selected tower details.
-- `Wave` appears above the map so it stays close to the battlefield.
-- Selecting a tower opens its detail card, where `Upgrade` and `Sell` show their values directly on the action buttons.
+- `生命` 會顯示在左側控制區附近。
+- `金錢` 會顯示在塔資訊旁邊的金錢狀態區塊。
+- `波數` 會顯示在地圖上方，方便邊看戰場邊掌握進度。
+- 選到塔之後會打開詳細資訊卡，`升級` 和 `賣出` 的金額會直接顯示在按鈕上。
 
-## Assets
+## 素材
 
-- Enemy sprites: `assets/enemies/scout.png`, `assets/enemies/brute.png`
-- Tower sprite: `assets/towers/basic.png`
+- 敵人圖片：`assets/enemies/scout.png`、`assets/enemies/brute.png`
+- 塔圖片：`assets/towers/basic.png`
