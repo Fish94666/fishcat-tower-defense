@@ -13,6 +13,14 @@
 
 直接用瀏覽器開啟 `index.html` 即可。
 
+## 網頁版遊玩
+
+如果你想直接打開已部署的網頁版，請前往：
+
+[https://fish94666.github.io/fishcat-tower-defense/](https://fish94666.github.io/fishcat-tower-defense/)
+
+如果網站內容看起來沒有更新，可以先嘗試重新整理，或使用無痕視窗重新打開。
+
 ## HUD 怎麼看
 
 - `生命` 會顯示在左側控制區附近。
