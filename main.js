@@ -23,7 +23,7 @@
 
   const TOWER_TYPES = {
     basic: {
-      label: "基礎魚塔",
+      label: "特務魚",
       cost: 28,
       range: TILE_SIZE * 1.9,
       damage: 9,
@@ -35,7 +35,7 @@
       markerColor: "rgba(201, 111, 59, 0.18)",
     },
     sniper: {
-      label: "狙擊魚塔",
+      label: "狙擊魚",
       cost: 55,
       range: TILE_SIZE * 3.0,
       damage: 24,
@@ -148,6 +148,11 @@
       maxWidth: 42,
       maxHeight: 48,
     },
+    sniper: {
+      src: "./assets/towers/sniper.png",
+      maxWidth: 64,
+      maxHeight: 60,
+    },
   };
 
   const enemySprites = {
@@ -156,6 +161,7 @@
   };
   const towerSprites = {
     basic: { image: null, loaded: false, failed: false },
+    sniper: { image: null, loaded: false, failed: false },
   };
 
   // Image loading is async, so each sprite tracks loaded/failed state for graceful fallbacks.
