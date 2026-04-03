@@ -42,16 +42,8 @@ body {
 
 .hud-panel {
   display: grid;
-  gap: 12px;
-  padding: 18px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.8rem;
-  color: var(--accent);
+  gap: 10px;
+  padding: 16px;
 }
 
 h1 {
@@ -61,8 +53,7 @@ h1 {
 }
 
 .controls {
-  display: grid;
-  gap: 8px;
+  display: block;
 }
 
 button {
@@ -85,18 +76,15 @@ button:hover {
 .life-panel,
 .economy-panel,
 .wave-panel,
-.tower-info,
-.message {
+.tower-info {
   padding: 12px 14px;
   border-radius: 14px;
   background: rgba(52, 115, 106, 0.08);
 }
 
 .hud-header,
-.controls p,
 .build-panel p,
-.tower-info p,
-.message p {
+.tower-info p {
   margin: 0;
 }
 
@@ -111,11 +99,11 @@ button:hover {
 .wave-panel {
   background: rgba(29, 42, 50, 0.9);
   color: #fff9ef;
+  padding: 10px 12px;
 }
 
 .life-chip,
-.economy-chip,
-.wave-chip {
+.economy-chip {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -132,13 +120,8 @@ button:hover {
   background: rgba(255, 250, 240, 0.88);
 }
 
-.wave-chip {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .life-chip strong,
-.economy-chip strong,
-.wave-chip strong {
+.economy-chip strong {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -149,20 +132,10 @@ button:hover {
   color: rgba(29, 42, 50, 0.72);
 }
 
-.wave-chip strong {
-  color: rgba(255, 249, 239, 0.86);
-}
-
 .life-chip span,
 .economy-chip span {
   font-size: 1.2rem;
   font-weight: 800;
-}
-
-.wave-chip span {
-  font-size: 0.95rem;
-  text-align: right;
-  color: rgba(255, 249, 239, 0.9);
 }
 
 .build-panel {
@@ -187,7 +160,6 @@ button:hover {
 .build-options {
   display: grid;
   gap: 8px;
-  margin-top: 10px;
 }
 
 .build-option {
@@ -210,6 +182,46 @@ button:hover {
 .build-option.is-selected {
   outline: 3px solid rgba(29, 42, 50, 0.18);
   outline-offset: 2px;
+}
+
+.build-option.is-unaffordable {
+  background: linear-gradient(135deg, rgba(201, 111, 59, 0.92), rgba(154, 91, 61, 0.92));
+  box-shadow: 0 8px 18px rgba(154, 91, 61, 0.18);
+}
+
+.wave-chip {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wave-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wave-header strong {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 249, 239, 0.86);
+}
+
+.wave-header span {
+  font-size: 0.95rem;
+  color: rgba(255, 249, 239, 0.9);
+}
+
+.wave-status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: rgba(255, 249, 239, 0.94);
 }
 
 .tower-info {
@@ -273,12 +285,6 @@ button:hover {
   font-weight: 800;
 }
 
-.tower-action-note {
-  margin-top: 8px;
-  font-size: 0.82rem;
-  color: rgba(29, 42, 50, 0.72);
-}
-
 .tower-action:disabled {
   cursor: not-allowed;
   opacity: 0.82;
@@ -286,17 +292,6 @@ button:hover {
   color: rgba(255, 250, 242, 0.92);
   background: rgba(201, 111, 59, 0.72);
   box-shadow: none;
-}
-
-.message {
-  min-height: 0;
-  padding: 8px 12px;
-  font-size: 0.92rem;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background: rgba(201, 111, 59, 0.12);
 }
 
 .game-shell {
@@ -317,21 +312,168 @@ canvas {
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .game-shell {
+    order: -1;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  canvas {
+    border-radius: 12px;
+  }
+
+  .wave-panel {
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+
+  .wave-chip {
+    gap: 4px;
+    padding: 7px 8px;
+  }
+
+  .wave-header strong {
+    font-size: 0.72rem;
+  }
+
+  .wave-header span,
+  .wave-status {
+    font-size: 0.82rem;
+  }
+
+  .hud-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .hud-header {
+    display: none;
+  }
+
+  .controls,
+  .build-panel,
+  .tower-info {
+    grid-column: 1 / -1;
+  }
+
+  .controls {
+    order: 1;
+  }
+
+  .life-panel {
+    order: 2;
+  }
+
+  .economy-panel {
+    order: 3;
+  }
+
+  .build-panel {
+    order: 4;
+  }
+
+  .tower-info {
+    order: 5;
+  }
+
+  .controls button {
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .life-panel,
+  .economy-panel {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .life-chip,
+  .economy-chip {
+    gap: 6px;
+    padding: 8px 10px;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .wave-header {
+    gap: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .life-chip strong,
+  .economy-chip strong {
+    font-size: 0.68rem;
+  }
+
+  .life-chip span,
+  .economy-chip span {
+    font-size: 1rem;
+  }
+
+  .build-panel,
+  .tower-info {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .build-panel h2,
+  .economy-panel h2,
+  .tower-info h2 {
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+  }
+
+  .economy-panel h2 {
+    display: none;
+  }
+
+  .build-options {
+    gap: 6px;
+  }
+
+  .build-option {
+    padding: 8px 10px;
+  }
+
+  .build-option strong {
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+  }
+
+  .build-option small {
+    font-size: 0.76rem;
+  }
+
+  .tower-info p {
+    font-size: 0.84rem;
   }
 
   .tower-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
   }
 
-  .wave-chip,
-  .life-chip,
-  .economy-chip {
-    align-items: flex-start;
-    flex-direction: column;
+  .tower-action {
+    min-height: 56px;
+    padding: 10px 12px;
+    border-radius: 14px;
   }
 
-  .wave-chip span {
-    text-align: left;
+  .tower-action-label {
+    font-size: 0.72rem;
+  }
+
+  .tower-action-value {
+    font-size: 1rem;
   }
 }
 

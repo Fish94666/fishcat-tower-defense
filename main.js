@@ -7,7 +7,6 @@
   const economyPanelEl = document.getElementById("economy-panel");
   const wavePanelEl = document.getElementById("wave-panel");
   const towerInfoEl = document.getElementById("tower-info");
-  const messageEl = document.getElementById("message");
   const startBtn = document.getElementById("start-btn");
 
   // Core rules and balancing values live together at the top for quick tuning.
@@ -282,7 +281,6 @@
   let lastEconomyMarkup = "";
   let lastWaveMarkup = "";
   let lastTowerInfoMarkup = "";
-  let lastMessageText = "";
 
   function isPathCell(x, y) {
     return mapLayout[y] && mapLayout[y][x] === "path";
@@ -432,6 +430,110 @@
       return false;
     }
     return !isPathCell(x, y) && !isRockCell(x, y) && !isTowerAt(x, y);
+  }
+
+  function getBuildPreview(gridX, gridY) {
+    const selectedType = state.selectedBuildType;
+    const towerType = getTowerType(selectedType);
+    const preview = {
+      status: "hidden",
+      reason: null,
+      gridX,
+      gridY,
+      selectedType,
+      shortage: 0,
+      towerType,
+    };
+
+    if (gridX === null || gridY === null || gridX === undefined || gridY === undefined) {
+      return preview;
+    }
+
+    preview.status = "blocked";
+
+    if (gridX < 0 || gridY < 0 || gridX >= GRID_COLS || gridY >= GRID_ROWS) {
+      preview.reason = "out_of_bounds";
+      return preview;
+    }
+
+    if (state.mode !== "playing") {
+      preview.reason = "not_playing";
+      return preview;
+    }
+
+    if (!towerType) {
+      preview.status = "hidden";
+      return preview;
+    }
+
+    if (isPathCell(gridX, gridY)) {
+      preview.reason = "path";
+      return preview;
+    }
+
+    if (isRockCell(gridX, gridY)) {
+      preview.reason = "rock";
+      return preview;
+    }
+
+    if (isTowerAt(gridX, gridY)) {
+      preview.reason = "occupied";
+      return preview;
+    }
+
+    if (state.gold < towerType.cost) {
+      preview.status = "unaffordable";
+      preview.reason = "insufficient_gold";
+      preview.shortage = towerType.cost - state.gold;
+      return preview;
+    }
+
+    preview.status = "valid";
+    return preview;
+  }
+
+  function getHoveredBuildPreview() {
+    if (!state.hoveredCell) {
+      return {
+        status: "hidden",
+        reason: null,
+        gridX: null,
+        gridY: null,
+        selectedType: state.selectedBuildType,
+        shortage: 0,
+        towerType: getSelectedBuildType(),
+      };
+    }
+
+    return getBuildPreview(state.hoveredCell.x, state.hoveredCell.y);
+  }
+
+  function getBuildClickMessage(preview) {
+    if (preview.reason === "not_playing") {
+      return "請先開始遊戲，再部署塔。";
+    }
+
+    if (preview.reason === "insufficient_gold") {
+      return "金錢不足，還差 " + preview.shortage + "g。";
+    }
+
+    if (preview.reason === "path") {
+      return "路徑上不能蓋塔。";
+    }
+
+    if (preview.reason === "rock") {
+      return "岩石地形不能蓋塔。";
+    }
+
+    if (preview.reason === "occupied") {
+      return "這格已經有塔了。";
+    }
+
+    if (preview.reason === "out_of_bounds") {
+      return "請在地圖範圍內選擇位置。";
+    }
+
+    return "這裡不能建造。";
   }
 
   function startGame() {
@@ -718,28 +820,19 @@
   }
 
   function placeTower(gridX, gridY) {
-    const selectedBuildType = getSelectedBuildType();
-    if (state.mode !== "playing") {
-      state.message = "請先按開始再放塔。";
+    const preview = getBuildPreview(gridX, gridY);
+    const previewTowerType = preview.towerType;
+    if (preview.status !== "valid") {
+      state.message = getBuildClickMessage(preview);
       return;
     }
 
-    if (!canBuildAt(gridX, gridY)) {
-      state.message = "那個格子不能放塔。";
-      return;
-    }
-
-    if (!selectedBuildType || state.gold < selectedBuildType.cost) {
-      state.message = "金錢還不夠。";
-      return;
-    }
-
-    state.gold -= selectedBuildType.cost;
+    state.gold -= previewTowerType.cost;
     const tower = createTower(gridX, gridY, state.nextTowerId, state.selectedBuildType);
     state.nextTowerId += 1;
     state.towers.push(tower);
     selectTowerById(tower.id);
-    state.message = selectedBuildType.label + " 已部署。";
+    state.message = previewTowerType.label + " 已部署。";
   }
 
   function getTowerAtPosition(x, y) {
@@ -772,19 +865,23 @@
   }
 
   function drawMap() {
+    const preview = getHoveredBuildPreview();
+
     for (let row = 0; row < GRID_ROWS; row += 1) {
       for (let col = 0; col < GRID_COLS; col += 1) {
         drawTile(col, row, mapLayout[row][col]);
       }
     }
 
-    if (state.hoveredCell) {
-      const x = state.hoveredCell.x;
-      const y = state.hoveredCell.y;
-      if (x >= 0 && y >= 0 && x < GRID_COLS && y < GRID_ROWS) {
-        ctx.fillStyle = canBuildAt(x, y) ? "rgba(52, 115, 106, 0.28)" : "rgba(201, 111, 59, 0.26)";
-        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    if (preview.status !== "hidden" && preview.gridX >= 0 && preview.gridY >= 0 && preview.gridX < GRID_COLS && preview.gridY < GRID_ROWS) {
+      if (preview.status === "valid") {
+        ctx.fillStyle = "rgba(52, 115, 106, 0.24)";
+      } else if (preview.status === "unaffordable") {
+        ctx.fillStyle = "rgba(201, 111, 59, 0.24)";
+      } else {
+        ctx.fillStyle = "rgba(156, 74, 59, 0.24)";
       }
+      ctx.fillRect(preview.gridX * TILE_SIZE, preview.gridY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }
 
@@ -804,7 +901,12 @@
 
   function drawSelectedTowerRange() {
     const selectedTower = getSelectedTower();
+    const preview = getHoveredBuildPreview();
     if (!selectedTower) {
+      return;
+    }
+
+    if (preview.status !== "hidden" && preview.gridX >= 0 && preview.gridY >= 0 && preview.gridX < GRID_COLS && preview.gridY < GRID_ROWS) {
       return;
     }
 
@@ -817,6 +919,104 @@
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+  }
+
+  function drawTowerVisual(tower, options) {
+    const config = towerSpriteConfig[tower.type];
+    const sprite = towerSprites[tower.type];
+    const alpha = options && options.alpha !== undefined ? options.alpha : 1;
+    const baseColor = options && options.baseColor ? options.baseColor : (tower.type === "sniper" ? "#6d4c41" : "#2d5f57");
+    const muzzleColor = options && options.muzzleColor ? options.muzzleColor : "#ffe8b0";
+    const shadowColor = options && options.shadowColor ? options.shadowColor : null;
+
+    if (shadowColor) {
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.9;
+      ctx.fillStyle = shadowColor;
+      ctx.beginPath();
+      ctx.ellipse(tower.x, tower.y + 18, 18, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (config && sprite && sprite.loaded && sprite.image) {
+      const scale = Math.min(
+        config.maxWidth / sprite.image.width,
+        config.maxHeight / sprite.image.height
+      );
+      const drawWidth = sprite.image.width * scale;
+      const drawHeight = sprite.image.height * scale;
+      const targetAngle = tower.angle;
+      const facingRight = Math.cos(targetAngle) >= 0;
+      const renderAngle = facingRight
+        ? targetAngle
+        : (targetAngle > Math.PI / 2 ? targetAngle - Math.PI : targetAngle + Math.PI);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(tower.x, tower.y);
+      ctx.rotate(renderAngle);
+      if (facingRight) {
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(
+        sprite.image,
+        -drawWidth / 2,
+        -drawHeight / 2,
+        drawWidth,
+        drawHeight
+      );
+      ctx.restore();
+      return;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(tower.x, tower.y);
+    ctx.fillStyle = baseColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.rotate(tower.angle);
+    ctx.fillStyle = muzzleColor;
+    ctx.fillRect(0, -4, 28, 8);
+    ctx.restore();
+  }
+
+  function drawBuildPreview() {
+    const preview = getHoveredBuildPreview();
+    if (preview.status !== "valid" && preview.status !== "unaffordable") {
+      return;
+    }
+
+    const towerType = preview.towerType;
+    if (!towerType) {
+      return;
+    }
+
+    const tower = createTower(preview.gridX, preview.gridY, -1, preview.selectedType);
+    const isValid = preview.status === "valid";
+    const rangeStroke = isValid ? "rgba(45, 95, 87, 0.72)" : "rgba(201, 111, 59, 0.78)";
+    const rangeFill = isValid ? "rgba(45, 95, 87, 0.10)" : "rgba(201, 111, 59, 0.12)";
+    const shadowColor = isValid ? "rgba(52, 115, 106, 0.22)" : "rgba(201, 111, 59, 0.28)";
+
+    ctx.save();
+    ctx.strokeStyle = rangeStroke;
+    ctx.fillStyle = rangeFill;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    ctx.arc(tower.x, tower.y, towerType.range, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    drawTowerVisual(tower, {
+      alpha: isValid ? 0.58 : 0.52,
+      baseColor: isValid ? "#2d5f57" : "#9a5b3d",
+      muzzleColor: isValid ? "#ffe8b0" : "#ffe0b6",
+      shadowColor,
+    });
   }
 
   function drawTowers() {
@@ -843,48 +1043,7 @@
         ctx.restore();
       }
 
-      const config = towerSpriteConfig[tower.type];
-      const sprite = towerSprites[tower.type];
-      if (config && sprite && sprite.loaded && sprite.image) {
-        const scale = Math.min(
-          config.maxWidth / sprite.image.width,
-          config.maxHeight / sprite.image.height
-        );
-        const drawWidth = sprite.image.width * scale;
-        const drawHeight = sprite.image.height * scale;
-        const targetAngle = tower.angle;
-        const facingRight = Math.cos(targetAngle) >= 0;
-        const renderAngle = facingRight
-          ? targetAngle
-          : (targetAngle > Math.PI / 2 ? targetAngle - Math.PI : targetAngle + Math.PI);
-
-        ctx.save();
-        ctx.translate(tower.x, tower.y);
-        ctx.rotate(renderAngle);
-        if (facingRight) {
-          ctx.scale(-1, 1);
-        }
-        ctx.drawImage(
-          sprite.image,
-          -drawWidth / 2,
-          -drawHeight / 2,
-          drawWidth,
-          drawHeight
-        );
-        ctx.restore();
-        continue;
-      }
-
-      ctx.save();
-      ctx.translate(tower.x, tower.y);
-      ctx.fillStyle = tower.type === "sniper" ? "#6d4c41" : "#2d5f57";
-      ctx.beginPath();
-      ctx.arc(0, 0, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.rotate(tower.angle);
-      ctx.fillStyle = "#ffe8b0";
-      ctx.fillRect(0, -4, 28, 8);
-      ctx.restore();
+      drawTowerVisual(tower);
     }
   }
 
@@ -1207,6 +1366,7 @@
     drawMap();
     drawPathMarkers();
     drawSelectedTowerRange();
+    drawBuildPreview();
     drawTowers();
     drawEnemies();
     drawEffects();
@@ -1221,10 +1381,12 @@
     const selectedTower = getSelectedTower();
     const buildPanelMarkup = [
       "<h2>建造塔防</h2>",
-      "<p>先選一種塔，再點草地格把它放上去。</p>",
       "<div class=\"build-options\">",
       Object.entries(TOWER_TYPES).map(([type, towerType]) =>
-        "<button type=\"button\" class=\"build-option" + (state.selectedBuildType === type ? " is-selected" : "") + "\" data-build-type=\"" + type + "\">"
+        "<button type=\"button\" class=\"build-option"
+        + (state.selectedBuildType === type ? " is-selected" : "")
+        + (state.gold < towerType.cost ? " is-unaffordable" : "")
+        + "\" data-build-type=\"" + type + "\">"
         + "<strong>" + towerType.label + " - " + towerType.cost + "g</strong>"
         + "<small>傷害 " + towerType.damage + " | 射程 " + towerType.range.toFixed(0) + " | 攻速 " + (1 / towerType.cooldown).toFixed(2) + "/秒</small>"
         + "</button>"
@@ -1261,8 +1423,11 @@
 
     const waveMarkup = [
       "<div class=\"wave-chip\">",
+      "<div class=\"wave-header\">",
       "<strong>第 " + currentWave + " / " + waves.length + " 波</strong>",
       "<span>" + (waveConfig ? waveConfig.name : "所有波次已完成") + "</span>",
+      "</div>",
+      "<p class=\"wave-status\">" + state.message + "</p>",
       "</div>",
     ].join("");
     if (waveMarkup !== lastWaveMarkup) {
@@ -1280,13 +1445,9 @@
       const upgradeLabel = upgradeCost === null ? "已滿級" : upgradeCost + "g";
       const sellLabel = sellValue + "g";
       towerInfoMarkup = [
-        "<h2>已選塔</h2>",
-        "<p><strong>等級</strong>：" + selectedTower.level + " / " + TOWER_MAX_LEVEL + "</p>",
-        "<p><strong>類型</strong>：" + getTowerType(selectedTower.type).label + "</p>",
-        "<p><strong>格位</strong>：" + selectedTower.gridX + ", " + selectedTower.gridY + "</p>",
+        "<h2>已選塔：" + getTowerType(selectedTower.type).label + " Lv." + selectedTower.level + "</h2>",
         "<p><strong>傷害</strong>：" + selectedTower.damage + "</p>",
-        "<p><strong>攻速</strong>：" + getTowerAttacksPerSecond(selectedTower).toFixed(2) + "/秒</p>",
-        "<p><strong>射程</strong>：" + selectedTower.range.toFixed(0) + "</p>",
+        "<p><strong>射速</strong>：" + getTowerAttacksPerSecond(selectedTower).toFixed(2) + "/秒</p>",
         "<div class=\"tower-actions\">",
         "<button type=\"button\" class=\"tower-action\" data-action=\"upgrade\" " + (canUpgradeTower(selectedTower) ? "" : "disabled") + ">"
           + "<span class=\"tower-action-label\">升級</span>"
@@ -1297,17 +1458,11 @@
           + "<span class=\"tower-action-value\">" + sellLabel + "</span>"
           + "</button>",
         "</div>",
-        "<p class=\"tower-action-note\">升級費用與賣出回收額會直接顯示在按鈕上。</p>",
       ].join("");
     }
     if (towerInfoMarkup !== lastTowerInfoMarkup) {
       towerInfoEl.innerHTML = towerInfoMarkup;
       lastTowerInfoMarkup = towerInfoMarkup;
-    }
-
-    if (state.message !== lastMessageText) {
-      messageEl.textContent = state.message;
-      lastMessageText = state.message;
     }
   }
 
@@ -1350,6 +1505,7 @@
   canvas.addEventListener("click", (event) => {
     const pointer = getPointerInfo(event);
     const clickedTower = getTowerAtPosition(pointer.canvasX, pointer.canvasY);
+    const buildPreview = getBuildPreview(pointer.gridX, pointer.gridY);
 
     // Selection takes priority over placement so clicking an existing tower never spends gold by mistake.
     if (clickedTower) {
@@ -1368,15 +1524,14 @@
       return;
     }
 
-    if (canBuildAt(pointer.gridX, pointer.gridY)) {
+    if (buildPreview.status === "valid") {
       placeTower(pointer.gridX, pointer.gridY);
       syncHud();
       draw();
       return;
     }
 
-    clearTowerSelection();
-    state.message = "已清除選擇。";
+    state.message = getBuildClickMessage(buildPreview);
     syncHud();
     draw();
   });
@@ -1431,6 +1586,7 @@
   function renderGameToText() {
     // Expose a compact text snapshot so tests and debugging tools can inspect game state.
     const selectedTower = getSelectedTower();
+    const buildPreview = getHoveredBuildPreview();
     const payload = {
       mode: state.mode,
       coordinateSystem: "原點在左上，x 軸向右、y 軸向下；位置使用畫布像素，格位使用地圖索引",
@@ -1497,6 +1653,13 @@
         };
         return acc;
       }, {}),
+      buildPreview: {
+        status: buildPreview.status,
+        reason: buildPreview.reason,
+        gridX: buildPreview.gridX,
+        gridY: buildPreview.gridY,
+        selectedType: buildPreview.selectedType,
+      },
       selectedTowerId: state.selectedTowerId,
       selectedTower: selectedTower
         ? {
